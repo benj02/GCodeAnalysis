@@ -8,7 +8,7 @@ program are the same as on your plans.
 
 Ensure you're running Python 2.7, then:
 
-    git clone https://github.com/improv32/GCodeAnalysis.githttps://github.com/improv32/GCodeAnalysis.git
+    git clone https://github.com/improv32/GCodeAnalysis.git
     cd GCodeAnalysis
     pip install -r requirements.txt
     python app.py
