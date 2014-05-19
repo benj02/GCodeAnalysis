@@ -26,16 +26,16 @@ NUM_EXAMPLE = "-100."
 
 GCodeGrammar = p.Grammar(r"""
   program = demarcated_program / m30_terminated_program
-  demarcated_program = ~"[^\%]"? "%" line* "%" anything?
-  m30_terminated_program = line* ("M30" / "m30") anything?
+  demarcated_program = ~"[^\%]"? "%" line* "%" anything
+  m30_terminated_program = line* ("M30" / "m30") anything
   blank = (ws / break)+
-  break = ("\n" / "\r\n")
-  ws = ("\t" / " " / comment)
+  break = "\n" / "\r\n"
+  ws = "\t" / " " / comment
   comment = "(" ~"[^\)]*" ")"
   anything = ~".*"s
 
-  line = (ws* word* ws*)* "\n"
-  word = !"M30" ~"[a-zA-Z]" decimal # M30 is not considered a word, but a terminating metastring
+  line = (ws* word* ws*)* break?
+  word = !"M30" !"m30" ~"[a-zA-Z]" decimal # M30 is not considered a word, but a terminating metastring
 
   decimal = plusminus? ((number "." number) / ("." number) / (number ".") / number)
   integer = plusminus? number
