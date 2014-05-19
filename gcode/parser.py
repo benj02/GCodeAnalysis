@@ -1,7 +1,7 @@
 import re
+import parsimonious as p
 
 EXAMPLE = """
-O0001
 G99 M42 (feed per rev, high gear if there is a gearbox on the machine)
 T101 (tool #1, tool offset #1)
 G50 S1500 (spindle speed limiting, this is very important for your safety!)
@@ -20,23 +20,25 @@ X99.
 N2 G40 X102. (End of the desired shape)
 G70 P1 Q2 (Finishing cycle, P1 and Q2 mean the same as in roughing cycle)
 G0 X200. Z200. M9 (Rapiding the tool away from workpiece, coolant off)
-M30 (End of program)
+M30
 """
+NUM_EXAMPLE = "-100."
 
-def parseString(gcode):
-  """ Parses program and return orderded list of words """
-  words = []
-  lines = []
-  for line in gcode.split('\n'):
-    line = re.sub(r"\(.*\)", "", line) # strip comments
-    line = line.strip()
-    lines.append(line)
-  for line in lines:
-    for word in line.split(" "):
-      words.append(word)
-  words = [word for word in words if word != ""] # strip empty words
-  return words
+GCodeGrammar = p.Grammar(r"""
+  program = demarcated_program / m30_terminated_program
+  demarcated_program = ~"[^\%]"? "%" line* "%" anything?
+  m30_terminated_program = line* ("M30" / "m30") anything?
+  blank = (ws / break)+
+  break = ("\n" / "\r\n")
+  ws = ("\t" / " " / comment)
+  comment = "(" ~"[^\)]*" ")"
+  anything = ~".*"s
 
-def getTools(words):
-  """ Return ordered list of tools in wordlist """
-  return [word for word in words if word[0] == "T"]
+  line = (ws* word* ws*)* "\n"
+  word = !"M30" ~"[a-zA-Z]" decimal # M30 is not considered a word, but a terminating metastring
+
+  decimal = plusminus? ((number "." number) / ("." number) / (number ".") / number)
+  integer = plusminus? number
+  plusminus = "+" / "-"
+  number = ~"[0-9]+"
+""")
