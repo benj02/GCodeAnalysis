@@ -16,7 +16,7 @@ G1 G42 Z0.5 F0.18 (Cutter compensation on, approaching the face of workpiece)
 X20. Z0
 G3 X50. Z-15. R15. (Cutting an arc, these coordinates are the endpoint for arc. R15. means radius of the arc.)
 G1 Z-25.
-X99.
+X99. ; test comment
 N2 G40 X102. (End of the desired shape)
 G70 P1 Q2 (Finishing cycle, P1 and Q2 mean the same as in roughing cycle)
 G0 X200. Z200. M9 (Rapiding the tool away from workpiece, coolant off)
@@ -28,17 +28,27 @@ GCodeGrammar = p.Grammar(r"""
   program = demarcated_program / m30_terminated_program
   demarcated_program = ~"[^\%]"? "%" line* "%" anything
   m30_terminated_program = line* ("M30" / "m30") anything
+
   blank = (ws / break)+
   break = "\n" / "\r\n"
-  ws = "\t" / " " / comment
-  comment = "(" ~"[^\)]*" ")"
+  ws = "\t" / " " / inline_comment
+  inline_comment = "(" ~"[^\)]*" ")"
+  eol_comment = ";" anything_except_break
   anything = ~".*"s
+  anything_except_break = ~".*"
 
-  line = (ws* word* ws*)* break?
-  word = !"M30" !"m30" ~"[a-zA-Z]" decimal # M30 is not considered a word, but a terminating metastring
+  line = block_delete? (ws* word* ws*)* eol_comment? break?
+  word = !m30_word ~"[a-zA-Z]" decimal # M30 is not considered a word, but a terminating metastring, only by this parser
+  m30_word = "M30" / "m30"
+  block_delete = "/" # Lines starting with / are ignored by machine when block-delete mode is on
 
   decimal = plusminus? ((number "." number) / ("." number) / (number ".") / number)
   integer = plusminus? number
   plusminus = "+" / "-"
   number = ~"[0-9]+"
+
+  parameter = numbered_parameter # TOTO rest of parameters
+  numbered_parameter = "#" expression
+  expression = number / parameter # TODO rest of expressions
+  bracketed_expression = "[" "]"
 """)
